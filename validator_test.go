@@ -289,3 +289,54 @@ func TestValidator_ValidateStruct_DataNil_panic(t *testing.T) {
 		New(opts).ValidateStruct()
 	})
 }
+
+func TestHtmlTags(t *testing.T) {
+	type TestCheck struct {
+		Input  string
+		HasTag bool
+	}
+
+	tests := []TestCheck {
+		{"", false},
+		{"Hello, World!", false},
+		{"foo&amp;bar", false},
+		{`Hello <a href="www.example.com/">World</a>!`, true},
+		{"Foo <textarea>Bar</textarea> Baz", true},
+		{"Foo <!-- Bar --> Baz", true},
+		{"<", false},
+		{"foo < bar", false},
+		{`Foo<script type="text/javascript">alert(1337)</script>Bar`, true},
+		{`Foo<div title="1>2">Bar`, true},
+		{`I <3 Ponies!`, false},
+		{`<script>foo()</script>`, true},
+	}
+
+	type User struct {
+		Data   string `json:"data"`
+	}
+
+	rules := MapData{
+		"data":   []string{"htmltag"},
+	}
+
+	//var result bool
+	for _, test := range tests {
+		postUser := User{
+			Data:   test.Input,
+		}
+
+		opts := Options{
+			Data:  &postUser,
+			Rules: rules,
+		}
+
+		vd := New(opts)
+		vd.SetTagIdentifier("json")
+		err := vd.ValidateStruct()
+
+		// give error if there is tag in string and still validator returns no error
+		if test.HasTag == isEmpty(err) {
+			t.Errorf("%s: expected %t, actual %v", test.Input, test.HasTag, err)
+		}
+	}
+}

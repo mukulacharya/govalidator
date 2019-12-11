@@ -3,6 +3,8 @@ package govalidator
 import (
 	"encoding/json"
 	"regexp"
+
+	strip "github.com/grokify/html-strip-tags-go"
 )
 
 // isAlpha check the input is letters (a-z,A-Z) or not
@@ -159,4 +161,9 @@ func isUUID4(str string) bool {
 // isUUID5 check the provided string is valid UUID version 5 or not
 func isUUID5(str string) bool {
 	return regexUUID5.MatchString(str)
+}
+
+func hasHtmlTag(str string) bool {
+	stripped := strip.StripTags(str)
+	return stripped != str
 }

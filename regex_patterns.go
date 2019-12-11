@@ -44,7 +44,7 @@ const (
 	// Numeric represents regular expression for numeric
 	Numeric string = "^-?[0-9]+$"
 	// URL represents regular expression for url
-	URL string = "^(?:http(s)?:\\/\\/)?[\\w.-]+(?:\\.[\\w\\.-]+)+[\\w\\-\\._~:/?#[\\]@!\\$&'\\(\\)\\*\\+,;=.]+$" // Ref: https://stackoverflow.com/questions/136505/searching-for-uuids-in-text-with-regex
+	URLs string = "^(?:http(s)?:\\/\\/)?[\\w.-]+(?:\\.[\\w\\.-]+)+[\\w\\-\\._~:/?#[\\]@!\\$&'\\(\\)\\*\\+,;=.]+$" // Ref: https://stackoverflow.com/questions/136505/searching-for-uuids-in-text-with-regex
 	// UUID represents regular expression for UUID
 	UUID string = "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$"
 	// UUID3 represents regular expression for UUID version 3
@@ -75,7 +75,7 @@ var (
 	regexIP           = regexp.MustCompile(IP)
 	regexIPV4         = regexp.MustCompile(IPV4)
 	regexIPV6         = regexp.MustCompile(IPV6)
-	regexURL          = regexp.MustCompile(URL)
+	regexURL          = regexp.MustCompile(URLs)
 	regexUUID         = regexp.MustCompile(UUID)
 	regexUUID3        = regexp.MustCompile(UUID3)
 	regexUUID4        = regexp.MustCompile(UUID4)

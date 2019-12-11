@@ -1078,4 +1078,23 @@ func init() {
 		}
 		return nil
 	})
+
+	// In check if provided field has html tags in it
+	AddCustomRule("htmltag", func(field string, rule string, message string, value interface{}) error {
+		rng := strings.Split(strings.TrimPrefix(rule, "htmltag:"), ",")
+		if len(rng) == 0 {
+			panic(errInvalidArgument)
+		}
+
+		err := fmt.Errorf("The %s field should not have any of html tags", field)
+		if message != "" {
+			err = errors.New(message)
+		}
+
+		str := toString(value)
+		if hasHtmlTag(str) {
+			return err
+		}
+		return nil
+	})
 }
