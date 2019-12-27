@@ -75,7 +75,7 @@ func (v *Validator) SetTagIdentifier(identifier string) {
 // ref: https://github.com/thedevsaddam/govalidator#example
 func (v *Validator) Validate() url.Values {
 	// if request object and rules not passed rise a panic
-	if len(v.Opts.Rules) == 0 || v.Opts.Request == nil {
+	if len(v.Opts.Rules) == 0 || (v.Opts.Request == nil && v.Opts.Data == nil) {
 		panic(errValidateArgsMismatch)
 	}
 	errsBag := url.Values{}
@@ -94,6 +94,9 @@ func (v *Validator) Validate() url.Values {
 			msg := v.getCustomMessage(field, rule)
 			// validate file
 			if strings.HasPrefix(field, "file:") {
+				if v.Opts.Request == nil {
+					panic(errValidateFileArgsMismatch)
+				}
 				fld := strings.TrimPrefix(field, "file:")
 				file, fh, _ := v.Opts.Request.FormFile(fld)
 				if file != nil && fh.Filename != "" {
@@ -103,8 +106,20 @@ func (v *Validator) Validate() url.Values {
 					validateCustomRules(fld, rule, msg, nil, errsBag)
 				}
 			} else {
+				var reqVal interface{}
 				// validate if custom rules exist
-				reqVal := strings.TrimSpace(v.Opts.Request.Form.Get(field))
+				if v.Opts.Request != nil {
+					reqVal = strings.TrimSpace(v.Opts.Request.Form.Get(field))
+				} else {
+					data := v.Opts.Data.(map[string]interface{})
+					reqVal = data[field]
+					switch reqVal.(type) {
+					case string:
+						reqValStr := reqVal.(string)
+						reqVal = strings.TrimSpace(reqValStr)
+					}
+				}
+
 				validateCustomRules(field, rule, msg, reqVal, errsBag)
 			}
 		}
@@ -116,20 +131,34 @@ func (v *Validator) Validate() url.Values {
 // getNonRequiredFields remove non required rules fields from rules if requiredDefault field is false
 // and if the input data is empty for this field
 func (v *Validator) getNonRequiredFields() map[string]struct{} {
-	if v.Opts.FormSize > 0 {
-		_ = v.Opts.Request.ParseMultipartForm(v.Opts.FormSize)
-	} else {
-		_ = v.Opts.Request.ParseMultipartForm(defaultFormSize)
-	}
-
-	inputs := v.Opts.Request.Form
 	nr := make(map[string]struct{})
-	if !v.Opts.RequiredDefault {
-		for k, r := range v.Opts.Rules {
-			isFile := strings.HasPrefix(k, "file:")
-			if _, ok := inputs[k]; !ok && !isFile {
-				if !isContainRequiredField(r) {
-					nr[k] = struct{}{}
+	if v.Opts.Request != nil {
+		if v.Opts.FormSize > 0 {
+			_ = v.Opts.Request.ParseMultipartForm(v.Opts.FormSize)
+		} else {
+			_ = v.Opts.Request.ParseMultipartForm(defaultFormSize)
+		}
+
+		inputs := v.Opts.Request.Form
+		if !v.Opts.RequiredDefault {
+			for k, r := range v.Opts.Rules {
+				isFile := strings.HasPrefix(k, "file:")
+				if _, ok := inputs[k]; !ok && !isFile {
+					if !isContainRequiredField(r) {
+						nr[k] = struct{}{}
+					}
+				}
+			}
+		}
+	} else {
+		inputs := v.Opts.Data.(map[string]interface{})
+		if !v.Opts.RequiredDefault {
+			for k, r := range v.Opts.Rules {
+				isFile := strings.HasPrefix(k, "file:")
+				if _, ok := inputs[k]; !ok && !isFile {
+					if !isContainRequiredField(r) {
+						nr[k] = struct{}{}
+					}
 				}
 			}
 		}
